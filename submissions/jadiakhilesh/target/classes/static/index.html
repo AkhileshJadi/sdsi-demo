@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roomie — Meeting Room Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c14; --bg-2:#11131f;
+  --surface:rgba(255,255,255,.035); --surface-solid:#171a28; --surface-2:rgba(255,255,255,.06);
+  --text:#eef0f8; --text-2:#a6abc0; --text-3:#6a7090;
+  --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.15);
+  --brand:#7c7cf0; --brand-2:#5b5bd6; --brand-3:#22d3ee;
+  --accent:#2dd4bf;
+  --danger:#fb7185; --danger-bg:rgba(251,113,133,.12);
+  --warn:#fbbf24; --ok:#4ade80;
+  --grad:linear-gradient(135deg,#7c7cf0 0%,#5b5bd6 40%,#22d3ee 100%);
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.35);
+  --shadow-lg:0 8px 40px rgba(0,0,0,.55);
+  --radius:18px; --radius-sm:11px;
+  --font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+  --ease:cubic-bezier(.22,.68,.32,1);
+}
+[data-theme="light"]{
+  --bg:#eef0f7; --bg-2:#f8f9fd;
+  --surface:rgba(255,255,255,.75); --surface-solid:#ffffff; --surface-2:rgba(0,0,0,.04);
+  --text:#17181f; --text-2:#5b6070; --text-3:#9aa0b0;
+  --border:rgba(0,0,0,.08); --border-strong:rgba(0,0,0,.14);
+  --brand:#5b5bd6; --brand-2:#7c7cf0; --brand-3:#0ea5a4;
+  --danger:#e11d48; --danger-bg:rgba(225,29,72,.08);
+  --warn:#d97706; --ok:#16a34a;
+  --grad:linear-gradient(135deg,#5b5bd6 0%,#7c7cf0 45%,#0ea5a4 100%);
+  --shadow:0 1px 3px rgba(23,24,31,.06),0 12px 32px rgba(23,24,31,.08);
+  --shadow-lg:0 8px 40px rgba(23,24,31,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);color:var(--text);min-height:100vh;
+  background:var(--bg);transition:background .4s,color .4s;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+/* ambient glows */
+.glow{position:fixed;border-radius:50%;filter:blur(90px);opacity:.5;pointer-events:none;z-index:0}
+.glow.a{width:480px;height:480px;background:#5b5bd6;top:-160px;left:-120px;animation:drift 18s ease-in-out infinite}
+.glow.b{width:420px;height:420px;background:#0ea5a4;bottom:-140px;right:-100px;animation:drift 22s ease-in-out infinite reverse}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,24px) scale(1.08)}}
+
+/* ---------- header ---------- */
+header{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid var(--border)}
+.header-inner{max-width:1260px;margin:0 auto;padding:14px 26px;display:flex;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:11px;font-weight:900;font-size:19px;letter-spacing:-.02em}
+.logo .mark{width:38px;height:38px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-size:19px;box-shadow:0 6px 20px color-mix(in srgb,var(--brand) 45%,transparent)}
+.logo small{display:block;font-weight:500;font-size:10.5px;color:var(--text-3);letter-spacing:.14em;text-transform:uppercase}
+.header-spacer{flex:1}
+.clock{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);padding:8px 14px;border-radius:10px}
+.clock .live{width:8px;height:8px;border-radius:50%;background:var(--danger);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,113,133,.55)}50%{box-shadow:0 0 0 6px rgba(251,113,133,0)}}
+.theme-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);width:38px;height:38px;border-radius:11px;cursor:pointer;font-size:17px;transition:.2s}
+.theme-btn:hover{border-color:var(--border-strong);color:var(--text);transform:translateY(-1px)}
+
+/* ---------- hero ---------- */
+.wrap{max-width:1260px;margin:0 auto;padding:30px 26px 70px;position:relative;z-index:1}
+.hero{margin-bottom:26px}
+.hero h1{font-size:34px;font-weight:900;letter-spacing:-.03em;line-height:1.1}
+.hero h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text-2);font-size:15px;margin-top:8px;max-width:560px;line-height:1.5}
+
+/* ---------- KPI ---------- */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:26px}
+.kpi{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);backdrop-filter:blur(10px);overflow:hidden;transition:transform .25s var(--ease),border-color .25s}
+.kpi:hover{transform:translateY(-4px);border-color:var(--border-strong)}
+.kpi::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 12%,transparent),transparent 60%);opacity:0;transition:.3s}
+.kpi:hover::after{opacity:1}
+.kpi .label{position:relative;z-index:1;font-size:11.5px;color:var(--text-3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.kpi .value{position:relative;z-index:1;font-size:32px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .sub{position:relative;z-index:1;font-size:12px;color:var(--text-2);margin-top:5px}
+
+/* ---------- layout ---------- */
+.columns{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:940px){.columns{grid-template-columns:1fr}}
+
+/* ---------- cards ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);backdrop-filter:blur(12px);overflow:hidden;opacity:0;transform:translateY(16px);animation:enter .6s var(--ease) forwards}
+@keyframes enter{to{opacity:1;transform:translateY(0)}}
+.card + .card{margin-top:20px}
+.card-head{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px}
+.card-head h2{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.card-head .icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:var(--surface-2)}
+.card-body{padding:24px}
+.card-head .badge{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 10px;border-radius:20px;background:color-mix(in srgb,var(--brand) 16%,transparent);color:var(--brand)}
+
+/* ---------- forms ---------- */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:7px}
+.field label .req{color:var(--danger)}
+input,select{
+  width:100%;padding:12px 14px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  background:var(--surface-solid);color:var(--text);font-size:14px;font-family:var(--font);transition:.15s;
+}
+[data-theme="dark"] input,[data-theme="dark"] select{background:rgba(0,0,0,.28)}
+input:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+input::placeholder{color:var(--text-3)}
+input[type="date"],input[type="time"],input[type="datetime-local"]{color-scheme:dark}
+[data-theme="light"] input[type="date"],[data-theme="light"] input[type="time"],[data-theme="light"] input[type="datetime-local"]{color-scheme:light}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.row2{grid-template-columns:1fr}}
+.btn{
+  width:100%;padding:13px;border:none;border-radius:var(--radius-sm);cursor:pointer;
+  font-family:var(--font);font-size:14px;font-weight:700;letter-spacing:-.01em;transition:transform .15s,box-shadow .2s,filter .15s;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:var(--grad);color:#fff;box-shadow:0 8px 22px color-mix(in srgb,var(--brand) 40%,transparent);position:relative;overflow:hidden}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px color-mix(in srgb,var(--brand) 52%,transparent)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);transform:translateX(-100%);transition:transform .7s}
+.btn-primary:hover::before{transform:translateX(100%)}
+.btn-ghost{background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border-strong)}
+.btn-sm{padding:8px 13px;font-size:12.5px;width:auto;border-radius:9px}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{opacity:.88}
+
+/* ---------- rooms ---------- */
+.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.room-grid{grid-template-columns:1fr}}
+.room-card{position:relative;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:15px;cursor:pointer;transition:.2s var(--ease);overflow:hidden}
+.room-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--brand) 55%,transparent);box-shadow:0 10px 24px rgba(0,0,0,.3)}
+.room-card:active{transform:scale(.98)}
+.room-card .name{font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px}
+.room-card .cap{font-size:11.5px;color:var(--text-3);margin-top:3px}
+.room-card .status{display:flex;align-items:center;gap:7px;margin-top:11px;font-size:12px;font-weight:700}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot.free{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent)}
+.dot.busy{background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 22%,transparent);animation:pulse 1.6s infinite}
+.dot.mixed{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 22%,transparent)}
+.util{margin-top:11px;height:4px;border-radius:4px;background:var(--border);overflow:hidden}
+.util .fill{height:100%;border-radius:4px;background:var(--grad);transition:width .8s var(--ease)}
+
+/* ---------- timeline ---------- */
+.timeline{position:relative;margin-top:6px}
+.tl-hours{display:flex;font-size:10.5px;color:var(--text-3);font-family:var(--mono);margin-bottom:2px}
+.tl-hours span{flex:1}
+.tl-lane{position:relative;height:46px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;margin-top:6px;overflow:hidden}
+.tl-lane .gridline{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb,var(--border-strong) 55%,transparent)}
+.tl-block{position:absolute;top:6px;bottom:6px;border-radius:6px;padding:0 8px;display:flex;align-items:center;font-size:10.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;cursor:pointer;transition:filter .15s,transform .15s;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.tl-block:hover{filter:brightness(1.15);transform:scaleY(1.06);z-index:2}
+.tl-room{font-size:11px;font-weight:700;color:var(--text-2);margin:12px 0 0;display:flex;align-items:center;gap:7px}
+.now-line{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);z-index:5;pointer-events:none}
+.now-line::before{content:'';position:absolute;top:0;left:50%;transform:translate(-50%,-4px);width:8px;height:8px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 3px color-mix(in srgb,var(--danger) 30%,transparent);animation:pulse 1.6s infinite}
+
+/* ---------- bookings list ---------- */
+.search{position:relative;margin-bottom:14px}
+.search input{padding-left:38px}
+.search .s-ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:14px}
+.booking-item{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px;background:var(--surface-solid);transition:.2s;animation:enter .4s var(--ease)}
+[data-theme="dark"] .booking-item{background:rgba(0,0,0,.22)}
+.booking-item:hover{border-color:var(--border-strong);transform:translateX(3px)}
+.booking-item .time-box{min-width:76px;text-align:center;padding:8px;border-radius:9px;background:var(--surface-2);font-family:var(--mono);font-size:11px;color:var(--text-2)}
+.booking-item .time-box b{display:block;font-size:13.5px;color:var(--text)}
+.booking-item .meta{flex:1;min-width:0}
+.booking-item .meta .title{font-weight:700;font-size:13.5px}
+.booking-item .meta .sub{font-size:11.5px;color:var(--text-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.booking-item .room-pill{min-width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.chip{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:3px 8px;border-radius:20px}
+.chip.rec{background:color-mix(in srgb,var(--brand) 20%,transparent);color:var(--brand)}
+.del-btn{background:var(--danger-bg);color:var(--danger);border:none;width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:15px;flex-shrink:0;transition:.15s}
+.del-btn:hover{background:var(--danger);color:#fff}
+.empty{padding:34px;text-align:center;color:var(--text-3);font-size:13px}
+.empty .big{font-size:34px;margin-bottom:8px;display:block}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;bottom:26px;right:26px;display:flex;flex-direction:column;gap:10px;z-index:100}
+.toast{min-width:290px;max-width:370px;background:var(--surface-solid);border:1px solid var(--border);border-left:4px solid var(--brand);border-radius:13px;padding:15px 17px;box-shadow:var(--shadow-lg);animation:slideIn .3s var(--ease)}
+.toast.ok{border-left-color:var(--ok)}
+.toast.err{border-left-color:var(--danger)}
+.toast .t-title{font-weight:800;font-size:13.5px;margin-bottom:3px}
+.toast .t-msg{font-size:12.5px;color:var(--text-2);line-height:1.45}
+@keyframes slideIn{from{opacity:0;transform:translateX(26px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+.toast.hide{opacity:0;transform:translateX(26px);transition:.3s}
+
+/* ---------- modal ---------- */
+#modal{position:fixed;inset:0;background:rgba(8,9,15,.6);backdrop-filter:blur(6px);display:none;place-items:center;z-index:90;padding:20px}
+#modal.open{display:grid;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal-box{background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-width:560px;width:100%;max-height:86vh;overflow:auto;animation:pop .3s var(--ease)}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:16px;font-weight:800}
+.modal-head .x{background:none;border:none;color:var(--text-2);font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:9px;transition:.15s}
+.modal-head .x:hover{background:var(--surface-2);color:var(--text)}
+.modal-body{padding:24px;font-family:var(--mono);font-size:13px;line-height:1.6;color:var(--text-2);white-space:pre-wrap}
+.modal-body .slot-big{font-family:var(--font);font-size:30px;font-weight:900;color:var(--text);letter-spacing:-.02em;margin-bottom:4px}
+
+/* highlight pulse on form */
+@keyframes highlight{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--brand) 45%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+.flash{animation:highlight .8s var(--ease)}
+</style>
+</head>
+<body>
+<div class="glow a"></div><div class="glow b"></div>
+
+<header>
+  <div class="header-inner">
+    <div class="logo"><div class="mark">🏢</div><div>Roomie<small>Meeting Room Booking</small></div></div>
+    <div class="header-spacer"></div>
+    <div class="clock"><span class="live"></span><span id="clock">--:--:--</span></div>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">☀️</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Book your <span>meeting room</span><br>in seconds.</h1>
+    <p>Check availability, find the earliest free slot, and schedule weekly recurring bookings — all in one place.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="label">🚪 Rooms</div><div class="value" id="kpiRooms" data-count="0">0</div><div class="sub">available now</div></div>
+    <div class="kpi"><div class="label">📅 Bookings</div><div class="value" id="kpiBookings" data-count="0">0</div><div class="sub">total scheduled</div></div>
+    <div class="kpi"><div class="label">☀️ Today</div><div class="value" id="kpiToday" data-count="0">0</div><div class="sub">meetings today</div></div>
+    <div class="kpi"><div class="label">👥 Attendees</div><div class="value" id="kpiAttendees" data-count="0">0</div><div class="sub">across all bookings</div></div>
+  </div>
+
+  <div class="columns">
+    <!-- LEFT -->
+    <div>
+      <div class="card" id="createCard" style="animation-delay:.05s">
+        <div class="card-head"><div class="icon">📅</div><h2>Create Booking</h2><span class="badge">M1</span></div>
+        <div class="card-body">
+          <div class="field"><label>Room <span class="req">*</span></label><select id="cRoom"></select></div>
+          <div class="field"><label>Organizer <span class="req">*</span></label><input id="cOrg" placeholder="e.g. Alice Nguyen"></div>
+          <div class="row2">
+            <div class="field"><label>Start <span class="req">*</span></label><input type="datetime-local" id="cStart"></div>
+            <div class="field"><label>End <span class="req">*</span></label><input type="datetime-local" id="cEnd"></div>
+          </div>
+          <div class="field"><label>Attendees (comma-separated emails)</label><input id="cAtt" placeholder="alice@co.com, bob@co.com"></div>
+          <button class="btn btn-primary" onclick="createBooking()">⚡ Create Booking</button>
+        </div>
+      </div>
+
+      <div class="card" style="animation-delay:.15s">
+        <div class="card-head"><div class="icon">🔍</div><h2>Find Free Slot</h2><span class="badge">M4</span></div>
+        <div class="card-body">
+          <div class="row2">
+            <div class="field"><label>Duration (minutes)</label><input type="number" id="fDur" value="30" min="1"></div>
+            <div class="field"><label>Attendee Count</label><input type="number" id="fCount" value="2" min="1"></div>
+          </div>
+          <div class="field"><label>Date</label><input type="date" id="fDate"></div>
+          <button class="btn btn-primary" onclick="findSlot()">🎯 Find Earliest Slot</button>
+        </div>
+      </div>
+
+      <div class="card" style="animation-delay:.25s">
+        <div class="card-head"><div class="icon">🔄</div><h2>Weekly Recurring</h2><span class="badge">M5</span></div>
+        <div class="card-body">
+          <div class="field"><label>Room <span class="req">*</span></label><select id="rRoom"></select></div>
+          <div class="field"><label>Organizer <span class="req">*</span></label><input id="rOrg" placeholder="e.g. Alice Nguyen"></div>
+          <div class="field"><label>First Date</label><input type="date" id="rDate"></div>
+          <div class="row2">
+            <div class="field"><label>Start Time</label><input type="time" id="rStart" value="09:00"></div>
+            <div class="field"><label>End Time</label><input type="time" id="rEnd" value="10:00"></div>
+          </div>
+          <div class="field"><label>Attendees</label><input id="rAtt" placeholder="alice@co.com, bob@co.com"></div>
+          <div class="field"><label>Weeks</label><input type="number" id="rWeeks" value="4" min="1" max="52"></div>
+          <button class="btn btn-primary" onclick="createRecurring()">🗓 Schedule Weekly Series</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <div class="card" style="animation-delay:.1s">
+        <div class="card-head"><div class="icon">🚪</div><h2>Rooms</h2><span class="badge">click to book</span></div>
+        <div class="card-body">
+          <div class="room-grid" id="roomGrid"></div>
+          <div style="margin-top:22px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <h2 style="font-size:13px;color:var(--text-2);font-weight:700">Today's Schedule</h2>
+              <span style="font-size:10px;color:var(--text-3);font-family:var(--mono)">09:00 — 18:00</span>
+            </div>
+            <div class="timeline" id="timeline"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="animation-delay:.2s">
+        <div class="card-head"><div class="icon">📋</div><h2>All Bookings</h2>
+          <div style="flex:1"></div>
+          <button class="btn btn-sm btn-ghost" onclick="listBookings()">↻ Refresh</button>
+        </div>
+        <div class="card-body">
+          <div class="search"><span class="s-ico">🔎</span><input id="searchBox" placeholder="Filter by room, organizer…" oninput="renderBookings()"></div>
+          <div id="bookingsList" style="max-height:500px;overflow-y:auto;padding-right:4px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalTitle">Details</h3><button class="x" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+const API='/api';
+const OPEN=9, CLOSE=18;
+const PALETTE=['#7c7cf0','#0ea5a4','#f59e0b','#fb7185','#a78bfa','#38bdf8','#34d399','#f472b6','#fb923c','#818cf8'];
+const ROOM_ICON=['🌿','🌳','🌲','🍁','🎄','🌴','🍃','🌻','🌵','🍀'];
+
+let ROOMS=[], BOOKINGS=[];
+
+// ---------- theme ----------
+function toggleTheme(){
+  const h=document.documentElement, dark=h.dataset.theme==='dark';
+  h.dataset.theme=dark?'':'dark';
+  document.getElementById('themeBtn').textContent=dark?'☀️':'🌙';
+  localStorage.setItem('theme',dark?'':'dark');
+}
+(function(){const t=localStorage.getItem('theme');if(t==='light'){document.documentElement.dataset.theme='light';document.getElementById('themeBtn').textContent='🌙';}})();
+
+// ---------- clock ----------
+function tickClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString();}
+tickClock();setInterval(tickClock,1000);
+
+// ---------- toast ----------
+function toast(title,msg,type='ok'){
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML=`<div class="t-title">${title}</div><div class="t-msg">${msg}</div>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.classList.add('hide');setTimeout(()=>el.remove(),320);},4300);
+}
+
+// ---------- helpers ----------
+const attList=s=>document.getElementById(s).value.split(',').map(x=>x.trim()).filter(Boolean);
+const pad=n=>String(n).padStart(2,'0');
+const fmtDT=s=>s? s.replace('T',' ').slice(0,16):'—';
+const fmtTime=t=>t? t.slice(0,5):'—';
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
+function dtLocal(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+function nextHour(){const d=new Date();d.setMinutes(0,0,0);d.setHours(d.getHours()+1);return dtLocal(d);}
+
+// ---------- count-up animation ----------
+function countUp(el,target){let cur=0;const step=Math.max(1,Math.ceil(target/40));const t=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(t);}el.textContent=cur;},18);}
+
+// ---------- data ----------
+async function refresh(){
+  ROOMS=await (await fetch(API+'/rooms')).json();
+  BOOKINGS=await (await fetch(API+'/bookings')).json();
+  renderRooms();renderTimeline();renderBookings();renderKpi();
+}
+function renderKpi(){
+  const today=todayStr();
+  const todayCount=BOOKINGS.filter(b=>b.start.slice(0,10)===today).length;
+  const attCount=BOOKINGS.reduce((s,b)=>s+(b.attendees?.length||0),0);
+  countUp(document.getElementById('kpiRooms'),ROOMS.length);
+  countUp(document.getElementById('kpiBookings'),BOOKINGS.length);
+  countUp(document.getElementById('kpiToday'),todayCount);
+  countUp(document.getElementById('kpiAttendees'),attCount);
+}
+
+function roomStatus(name){
+  const now=new Date();
+  const active=BOOKINGS.some(b=>b.room===name&&new Date(b.start)<=now&&now<new Date(b.end));
+  if(active)return 'busy';
+  if(BOOKINGS.some(b=>b.room===name&&b.start.slice(0,10)===todayStr()))return 'mixed';
+  return 'free';
+}
+function roomUtil(name){
+  const today=todayStr();const total=CLOSE-OPEN;
+  const mins=BOOKINGS.filter(b=>b.room===name&&b.start.slice(0,10)===today)
+    .reduce((s,b)=>{const sh=+b.start.slice(11,13)+(+b.start.slice(14,16))/60,eh=+b.end.slice(11,13)+(+b.end.slice(14,16))/60;return s+Math.max(0,Math.min(eh,CLOSE)-Math.max(sh,OPEN));},0);
+  return Math.min(100,(mins/total)*100);
+}
+function renderRooms(){
+  const g=document.getElementById('roomGrid');
+  g.innerHTML=ROOMS.map((r,i)=>{
+    const s=roomStatus(r.name);
+    const label=s==='free'?'Free now':s==='busy'?'In use':'Booked today';
+    const u=roomUtil(r.name);
+    return `<div class="room-card" onclick="quickBook('${r.name}')" title="Click to book ${r.name}">
+      <div class="name"><span style="font-size:17px">${ROOM_ICON[i%ROOM_ICON.length]}</span>${r.name}</div>
+      <div class="cap">Capacity · ${r.capacity} seats</div>
+      <div class="status"><span class="dot ${s}"></span>${label}</div>
+      <div class="util"><div class="fill" style="width:${u}%"></div></div>
+    </div>`;
+  }).join('');
+  const opts=ROOMS.map(r=>`<option value="${r.name}">${r.name} — ${r.capacity} seats</option>`).join('');
+  document.getElementById('cRoom').innerHTML=opts;
+  document.getElementById('rRoom').innerHTML=opts;
+}
+
+// ---------- quick book ----------
+function quickBook(name){
+  document.getElementById('cRoom').value=name;
+  document.getElementById('cStart').value=nextHour();
+  const d=new Date();d.setMinutes(0,0,0);d.setHours(d.getHours()+2);
+  document.getElementById('cEnd').value=dtLocal(d);
+  document.getElementById('cOrg').focus();
+  const card=document.getElementById('createCard');
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+  card.classList.remove('flash');void card.offsetWidth;card.classList.add('flash');
+  toast('Room selected',`${name} — start time pre-filled to next hour`);
+}
+
+// ---------- timeline ----------
+function nowPct(){
+  const n=new Date();const h=n.getHours()+n.getMinutes()/60+n.getSeconds()/3600;
+  const p=((h-OPEN)/(CLOSE-OPEN))*100;
+  return (p>=0&&p<=100)?p:null;
+}
+function renderTimeline(){
+  const tl=document.getElementById('timeline');
+  const today=todayStr();
+  const todays=BOOKINGS.filter(b=>b.start.slice(0,10)===today);
+  const roomsToShow=ROOMS.filter(r=>todays.some(b=>b.room===r.name));
+  let hours='';for(let h=OPEN;h<CLOSE;h++)hours+=`<span>${pad(h)}:00</span>`;
+  const total=CLOSE-OPEN, np=nowPct();
+  let lanes='';
+  roomsToShow.forEach((r,i)=>{
+    const color=PALETTE[i%PALETTE.length];
+    const blocks=todays.filter(b=>b.room===r.name).map(b=>{
+      const sh=+b.start.slice(11,13)+(+b.start.slice(14,16))/60;
+      const eh=+b.end.slice(11,13)+(+b.end.slice(14,16))/60;
+      const left=((sh-OPEN)/total)*100, width=((eh-sh)/total)*100;
+      return `<div class="tl-block" style="left:${left}%;width:${Math.max(width,1.4)}%;background:${color}" onclick="showBooking('${b.id}')">${fmtTime(b.start)}</div>`;
+    }).join('');
+    let grid='';for(let h=OPEN;h<=CLOSE;h++)grid+=`<div class="gridline" style="left:${((h-OPEN)/total)*100}%"></div>`;
+    const nowLine=(np!==null)?`<div class="now-line" style="left:${np}%"></div>`:'';
+    lanes+=`<div class="tl-room">${r.name}</div><div class="tl-lane">${grid}${blocks}${nowLine}</div>`;
+  });
+  tl.innerHTML=roomsToShow.length?`<div class="tl-hours">${hours}</div>${lanes}`
+    :`<div class="empty"><span class="big">🗓</span>No meetings today yet.<br>Create a booking to see it on the timeline.</div>`;
+}
+
+// ---------- bookings ----------
+function renderBookings(){
+  const el=document.getElementById('bookingsList');
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  const list=BOOKINGS.filter(b=>(b.room+b.organizer).toLowerCase().includes(q));
+  if(!BOOKINGS.length){el.innerHTML=`<div class="empty"><span class="big">📭</span>No bookings yet.<br>Use the forms to create your first meeting.</div>`;return;}
+  if(!list.length){el.innerHTML=`<div class="empty"><span class="big">🔎</span>No matches for "${q}"</div>`;return;}
+  el.innerHTML=list.map(b=>{
+    const ci=ROOMS.findIndex(r=>r.name===b.room);
+    const color=PALETTE[(ci>=0?ci:0)%PALETTE.length];
+    const st=b.start.replace('T',' ').slice(11,16), en=b.end.replace('T',' ').slice(11,16);
+    return `<div class="booking-item">
+      <div class="room-pill" style="background:${color}">${(b.room||'?')[0]}</div>
+      <div class="time-box"><b>${st}</b>→ ${en}</div>
+      <div class="meta">
+        <div class="title">${b.room} · ${b.organizer||'—'}</div>
+        <div class="sub">${b.start.slice(0,10)} · ${(b.attendees?.length||0)} attendees${b.recurrenceGroup?' · <span class="chip rec">recurring</span>':''}</div>
+      </div>
+      <button class="del-btn" title="Delete" onclick="delBooking('${b.id}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function showBooking(id){
+  const b=BOOKINGS.find(x=>x.id===id);if(!b)return;
+  openModal('Booking Details',`Room        : ${b.room}\nOrganizer   : ${b.organizer}\nStart       : ${fmtDT(b.start)}\nEnd         : ${fmtDT(b.end)}\nAttendees   : ${(b.attendees||[]).join(', ')}\nRecurring   : ${b.recurrenceGroup?b.recurrenceGroup:'—'}`);
+}
+
+// ---------- modal ----------
+function openModal(t,body,big){document.getElementById('modalTitle').textContent=t;const mb=document.getElementById('modalBody');mb.innerHTML=big?`<div class="slot-big">${big}</div>`:'';const pre=document.createElement('pre');pre.textContent=body;mb.appendChild(pre);document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+// ---------- actions ----------
+async function createBooking(){
+  const body={room:document.getElementById('cRoom').value,organizer:document.getElementById('cOrg').value.trim(),
+    start:document.getElementById('cStart').value+':00',end:document.getElementById('cEnd').value+':00',attendees:attList('cAtt')};
+  const res=await fetch(API+'/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(res.ok){toast('Booking created',`${data.room} · ${fmtTime(data.start)}–${fmtTime(data.end)}`,'ok');refresh();}
+  else toast('Could not create booking',data.error||res.statusText,'err');
+}
+async function findSlot(){
+  const body={durationMinutes:+document.getElementById('fDur').value,attendeeCount:+document.getElementById('fCount').value,date:document.getElementById('fDate').value};
+  const res=await fetch(API+'/find-slot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(res.ok){openModal('Earliest Free Slot',`Date   : ${data.date}\nStart  : ${data.start}\nEnd    : ${data.end}`,`${data.room} @ ${data.start}`);}
+  else toast('No slot found',data.error||res.statusText,'err');
+}
+async function createRecurring(){
+  const body={room:document.getElementById('rRoom').value,organizer:document.getElementById('rOrg').value.trim(),
+    firstDate:document.getElementById('rDate').value,time:{start:document.getElementById('rStart').value,end:document.getElementById('rEnd').value},
+    attendees:attList('rAtt'),weeks:+document.getElementById('rWeeks').value};
+  const res=await fetch(API+'/bookings/recurring',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(res.ok){
+    const c=(data.created||[]).length,f=(data.conflicts||[]).length;
+    if(f){toast('Series created — with conflicts',`${c} created, ${f} conflicted`,'ok');
+      openModal('Recurring Conflicts',`Created ${c} booking(s).\n${f} occurrence(s) conflicted:\n\n${(data.conflicts||[]).map(x=>`• ${x.date} — ${x.reason}`).join('\n')}`);}
+    else toast('Recurring series created',`${c} weekly bookings scheduled`,'ok');
+    refresh();
+  } else toast('Could not schedule series',data.error||res.statusText,'err');
+}
+async function delBooking(id){
+  const res=await fetch(API+'/bookings/'+id,{method:'DELETE'});
+  if(res.ok){toast('Booking deleted','Removed from schedule','ok');refresh();}
+  else toast('Delete failed','Could not remove booking','err');
+}
+
+// ---------- init ----------
+document.getElementById('fDate').value=todayStr();
+document.getElementById('rDate').value=todayStr();
+document.getElementById('cStart').value=nextHour();
+document.getElementById('cEnd').value=dtLocal(()=>{const d=new Date();d.setMinutes(0,0,0);d.setHours(d.getHours()+2);return d;}());
+refresh();
+// keep "now" line live
+setInterval(renderTimeline,30000);
+</script>
+</body>
+</html>

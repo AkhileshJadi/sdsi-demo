@@ -1,0 +1,7 @@
+[
+  {"name": "Room 1", "capacity": 4},
+  {"name": "Room 2", "capacity": 6},
+  {"name": "Room 3", "capacity": 10},
+  {"name": "Room 4", "capacity": 2},
+  {"name": "Room 5", "capacity": 20}
+]
